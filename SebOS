@@ -1,0 +1,590 @@
+### SebOS BOOT DISK ###
+### Requires Memory ###
+### Requires Floppy ###
+
+### INCLUDE ###
+var str = Connect("Lodge_Room2_LargeRecorder_LargeRecorder_1")
+var heart = Connect("Heart")
+var mf = Connect("MainFrame")
+var hug = Connect("Hugin")
+var trap = Connect("FactoryLobbyTrap")
+var fin = Connect("FinanceComputer")
+var gates = Connect("Hotel_Lobby_ComputerCashier")
+
+SaveMemory(str, "Lodge_Room2_LargeRecorder_LargeRecorder_1")
+SaveMemory(heart, "Heart")
+SaveMemory(mf, "MainFrame")
+SaveMemory(hug, "Hugin")
+SaveMemory(trap, "FactoryLobbyTrap")
+SaveMemory(fin, "FinanceComputer")
+SaveMemory(gates, "Hotel_Lobby_ComputerCashier")
+
+### SCREWDRIVER ###
+
+# SetMhz(500)
+# EnableAPI("internet")
+# EnableAPI("arcade")
+# EnableAPI("floppy")
+# EnableAPI("memory")
+# EnableAPI("door")
+
+### BIOS MEMORY ###
+var cons = [str,heart,mf,hug,trap,fin,gates]
+var types = ["bed","creditcard","door","drink","extractor","fence","floppy","fountain","fryingpan","fusebox","goods","modifier","hackdev","key","lamp","locker","machine","map","memory","musicbox","mysticalcube","pawn","point","portal","radio","screwdriver","seat","sendpipe","sink","snus","suitcase","taser","teleporter","tram","trashcan","tv","vendingmachine"]
+var lib = ["help","ports","connect","browse","store","restore","delete","remoteCall","decorrupt","balances","credit","roomSearch","typeSearch","peopleFind","gatecrash","slurp","info","displayTest"]
+
+var Qhelp = "Displays list of available commands or describes a command's function. Usage: <help> [commandName]"
+var Qports = "Displays a list of open internet connections. Usage: <ports>"
+var Qconnect = "Open a new internet connection. Usage: <connect> [targetName]"
+var Qbrowse = "Display all key/value pairs in memory. Usage: <browse>"
+var Qstore = "Save a key/value pair to memory, prompts when overwriting existing key. Usage: <store> [key] [value]"
+var Qrestore = "Usage: <>"
+var Qdelete = "Usage: <>"
+var QremoteCall = "Usage: <>"
+var Qdecorrupt = "Usage: <>"
+var Qbalances = "Usage: <>"
+var Qcredit = "Usage: <>"
+var QroomSearch = "Usage: <>"
+var QtypeSearch = "Usage: <>"
+var QpeopleFind = "Usage: <>"
+var Qgatecrash = "Usage: <>"
+var Qslurp = "Usage: <>"
+var Qinfo = "Usage: <>"
+var QdisplayTest = "Usage: <>"
+
+var descs = [Qhelp,Qports,Qconnect,Qbrowse,Qstore,Qrestore,Qdelete,QremoteCall,Qdecorrupt,Qbalances,Qcredit,QroomSearch,QtypeSearch,QpeopleFind,Qgatecrash,Qslurp,Qinfo,QdisplayTest]
+
+loop x from 0 to (Count(lib) - 1)
+	SaveMemory(lib[x], descs[x])
+end
+
+array reserved = []
+loop x in GetMemories()
+	Append(reserved, x)
+end
+
+
+# Read only: var finLib = ["GetBalanceForPerson","ChangeBalance"]
+
+### DISPLAY ###
+var HGT = Height()
+var WID = Width()
+var ROWS = Int((HGT/9) - 2)
+var COLS = Int((WID/8) - 2)
+
+### HEADER ###
+ClearText()
+PlaySound("Coin 1")
+Bar()
+Star()
+Print("SebOS v1.0.1")
+Info()
+Print("Display: " + COLS + " COL x " + ROWS + " ROW")
+Star()
+Bar()
+Input("Press enter to continue...")
+help([])
+
+var id = -1
+
+### MAIN ###
+loop
+	string cmd = ""
+	array args = []
+	string input = Input("> ")
+
+	number index = -1
+	loop x in input
+		if index < 0 and x != " "
+		   cmd = cmd + x
+	   else if index >= 0 and x != " "
+		   args[index] = args[index] + x
+	   else
+		  index++
+		  Append(args,"")
+	   end
+	end
+	
+	#Debug#
+	#Print("CMD: " + cmd + "; Args: " + args)
+	#Debug#
+    
+    if cmd == "cd"
+        Print("ROOT")
+    else if cmd == "h" or cmd == "help"
+        help(args)
+    else if cmd == "boot"
+        boot()
+	else if cmd == "ports"
+		ports()
+    else if cmd == "connect"
+        connect(args)     
+    else if cmd == "browse"
+        browse(args)
+    else if cmd == "store"
+        store(args)
+    else if cmd == "restore"
+        restore(args)
+    else if cmd == "delete"
+		    delete(args)
+    else if cmd == "remoteCall"
+        remoteCall(args)
+    else if cmd == "decorrupt"
+        decorrupt()
+    else if cmd == "roomSearch"
+        roomSearch(args)
+    else if cmd == "typeSearch"
+       	typeSearch(args)
+    else if cmd == "peopleFind"
+        peopleFind(args)
+    else if cmd == "gatecrash"
+        gatecrash()
+	else if cmd == "balances"
+		balances()
+	else if cmd == "credit"
+		credit(args)
+    else if cmd == "slurp"
+        Slurp()
+    else if cmd == "info"
+        Info()
+	else if cmd == "displayTest"
+		displayTest()
+    else
+        Print("Can't understand command " + cmd)
+        Print("Enter 'h' or 'help' for a list of commands.")
+		Print("Enter 'h' or 'help' with a command name for usage.")
+    end
+end
+
+DisconnectAll()
+
+### FUNCTIONS ###
+
+# Bar - Print a horizontal line of equals signs
+void Bar()
+    Print("===================")
+end
+
+# Bar - Print a horizontal line of asterisks
+void Star()
+	Print("* * * * * * * * * *")
+end
+
+
+# List - Display an array of data with breaks to prevent scrolling
+void List(array a)
+	if Count(a) > 0
+		loop x from 0 to Count(a) - 1
+			if Mod(x+2,ROWS) == 0
+				PrintS(a[x])
+				Input("...")
+			else
+				Print(a[x])
+			end
+		end
+	end
+end
+
+# IsReserved - Returns whether a given input is a reserved key by SebOS
+bool isReserved(var key)
+	loop x in reserved
+		if key == x
+			return true
+		end
+	end
+	return false
+end
+
+# GetUserMemories - Returns all memories under non-reserved keys
+array getUserMemories()
+	var all = GetMemories()
+	var user = []
+	loop x in all
+		if !isReserved(x)
+			Append(user,x)
+		end
+	end
+	return user
+end
+
+### PROGRAMS ###
+
+# Help - Display available commands or get usage
+void help(array args)
+    if (Count(args) == 0)
+		# Show all commands
+		Print("Available commands:")
+		var cmdList = []
+		loop lib
+			Append(cmdList, " - " + @)
+		end
+		List(cmdList)
+	else
+		# Give usage for a command
+		var cmd = args[0]
+		bool found = false
+		loop x in lib
+			if cmd == x
+				Print(LoadMemory(cmd))
+				found = true
+			end
+		end
+		if !found 
+			Print("Unrecognized command: " + cmd)
+		end
+	end
+end
+
+# Boot - Check for floppy, boot if found
+void boot()
+   if HasFloppy()
+       BootFromFloppy()
+   else
+       Print("Floppy not found.")    
+   end 
+end
+
+# Ports - Display a list of open internet connections
+void ports()
+	Print("There are " + Count(cons) + " connections open.")
+	Print("Port : HostName")
+	if Count(cons) > 0
+		array lines = []
+		loop x in cons
+			Append(lines, x + " : " + LoadMemory(x))
+		end
+		List(lines)
+	end
+end
+
+# Connect - Open a new internet connection
+void connect(array args)
+    Print("Open connections: " + cons)
+	
+	# Prompt for any missing parameter
+	string connectionName
+	if Count(args) == 0
+		connectionName = Input("Name: ")
+	else
+		connectionName = args[0]
+		Print("Name: " + connectionName)
+	end
+	
+	
+	
+	# Attempt to connect
+    id = Connect(connectionName)
+	if id >= 0
+	
+		# Notify user of repeat connections
+		if LoadMemory(id) != connectionName
+			Print("Already connected to " + connectionName + " on port " + id)
+		else
+			Print("Connected to " + connectionName + " on port " + id)
+			# Notify user if memory was overwritten to store connection
+			if HasMemory(id)
+				Print("Notice: a memory entry was destroyed to store this connection.")
+				Print("Key: " + id + "; Value: " + LoadMemory(id))
+			end
+			# Record to list of open connections
+			Append(cons, id)
+			SaveMemory(id, connectionName)
+		end
+	end
+end
+
+# Browse - Display all key/value pairs in memory
+void browse(array args)
+	array allKeys = []
+	
+	# If system flag was set, include reserved memories
+	if Count(args) > 0
+		if (args[0] == "sys" or args[0] == "system")
+			allKeys = GetMemories()
+			Input("BIOS memory will be shown. Press enter to continue...")
+		else
+			allKeys = getUserMemories()
+		end
+	else
+		allKeys = getUserMemories()
+	end
+	
+	# Display key-value pairs
+	if (Count(allKeys) > 0)
+		Print("(Key : Value)")
+		var kvpList = []
+		loop x in allKeys
+			Append(kvpList, x + " : " + LoadMemory(x))
+		end
+		List(kvpList)
+	else
+		Print("No data in local storage.")
+	end
+end
+
+# Store - Save a key/value pair to memory, prompts when overwriting existing key
+void store(array args)
+	var key
+	var value
+	
+	# Prompt for any missing parameters
+	if Count(args) >= 1
+		key = args[0]
+		Print("Key: " + key)
+	else
+		key = Input("Key: ")
+	end
+	
+	if Count(args) >= 2
+		value = args[1]
+		Print("Value: " + value)
+	else
+		value = Input("Value: ")
+	end
+	
+	# Prompt to overwrite if key already exists
+    var write = "y"
+    var allMems = GetMemories()
+    loop x in allMems
+        if x == key
+            Print(key + " exists, value: " + LoadMemory(key))
+			# Show extra warning if existing key is reserved by the system
+			if isReserved(key)
+				Print("WARNING: This memory is reserved by the system. Tampering may cause instability.")
+			end
+            write = Input("Overwrite(y/n)? ")
+            break
+        end
+    end
+
+	# Finalize writing (or not)
+    if write == "y" || write == "Y"		
+        SaveMemory(key,value)
+        Print("Data was saved: [" + key + " : " + value + "]")
+    else
+		Print("Data was not written.")
+    end
+end
+
+# Restore - Display a specified key and its value from memory
+void restore(array args)
+    string key
+	
+	# Prompt for any missing parameter
+	if Count(args) == 0
+		key = Input("Key: ")
+	else
+		key = args[0]
+		Print("Key: " + key)
+	end
+	
+	# Show a notice if the key is reserved by the system
+	if isReserved(key)
+		Print("Notice: this key is reserved by the system.")
+	end
+	
+	# Display value associated with key
+    Print("Value: " + LoadMemory(key))
+end
+
+# Delete - Delete a specified key/value pair from memory
+void delete(array args)
+	var key
+	
+	# Prompt for any missing parameter
+	if Count(args) == 0
+		key = Input("Key: ")
+	else
+		key = args[0]
+		Print("Key: " + key)
+	end
+	
+	if !HasMemory(key)
+		Print(key + " does not exist.")
+	else
+		Print(key + " : " + LoadMemory(key))
+		# Show extra warning if existing key is reserved by the system
+		if isReserved(key)
+			Print("WARNING: This memory is reserved by the system. Tampering may cause instability.")
+		end
+		var confirm = Input("Confirm deletion? (y/n): ")
+		if confirm == "Y" || confirm == "y"
+			EraseMemory(key)
+			Print("Data was deleted.")
+		else
+			Print("Data was not deleted.")
+		end
+	end
+end
+
+# RemoteCall - Calls a remote function from an open connection
+void remoteCall(array args)
+    string fnName
+	var id
+	array fnArgs
+	
+	
+	
+	# Prompt for any missing paramters
+	if Count(args) >= 1
+		id = args[0]
+		Print("Host Port #: " + id)
+	else
+		# Show open connections
+		ports()
+		id = Input("Host Port #: ")
+	end
+	
+	if Count(args) >= 2
+		fnName = args[1]
+		Print("Function Name: " + fnName)
+	else
+		fnName = Input("Function Name: ")
+	end
+	
+	if Count(args) > 2
+		loop x from 2 to (Count(args) - 1)
+			Append(fnArgs, args[x])
+		end
+		Print("Args: " + fnArgs)
+	else
+		var argNum = 0
+		Print("Enter arguments one at a time. Enter nothing to finish.")
+		loop
+			var nextArg = Input("Arg #" + argNum + ": ")
+			if nextArg == ""
+				break
+			else
+				Append(fnArgs, nextArg)
+				argNum++
+			end
+		end
+	end
+	
+	# See if function exists before calling
+	if !id.HasFunction(fnName)
+		Print("No such function exists on remote host.")
+	else
+		var result = RemoteFunctionCall(id, fnName, fnArgs)
+		
+		# Try to display result of remote function call
+		Print("Result: " + result)
+	end
+end
+
+# Decorrupt - Sets corruption to zero in any people with positive corruption value
+void decorrupt()
+    var people = mf.GetPeople()
+    loop name in people
+        var cor = heart.GetNumericData(name, "corruption")
+        if cor > 0
+            Print(name + " at " + cor + " corruption.")
+            Print("Curing " + name)
+            heart.SetNumericData(name, "corruption", 0)
+        end
+    end
+    Print("Done.")
+end
+
+# RoomSearch - Returns all items in a room matching a search term (blank returns all rooms)
+void roomSearch(array args)
+    var room = Input("Enter room name: ")
+	var items = mf.GetThingsInRoom(room)
+    loop items
+		Print(@)
+    end
+    Print("Done.")    
+end
+
+# TypeSearch - Returns objects of a given type matching a search term with their locations (blank term returns all objects of specified type)
+void typeSearch(array args)
+    Print("Known types: ")
+    var typeCount = Count(types)
+    loop x from 0 to typeCount - 1
+        if Mod(x,6) != 0
+            PrintS(types[x] + ", ")
+        else
+            Print(types[x] + ", ")
+        end
+    end
+    Print("---")
+    var type = Input("Search what type?: ")
+    var typeExists = false
+    loop types
+        if @ == type
+           typeExists = true
+	          break
+        end
+    end
+    if !typeExists
+        Print("Invalid type.")
+    else
+        var things = mf.GetThingsOfType(type)
+        var term = Input("Enter search term: ")
+        loop things
+            if str.StringContains(@,term)
+                Print(@ + " : " + mf.GetPosition(@))
+            end
+        end
+        Print("Done.")
+    end
+end
+
+# PeopleFind - Returns the names and current room locations of people matching a search term (blank returns all people w/ locations)
+void peopleFind(array args)
+   var people = mf.GetPeople()
+   var term = Input("Enter person search term: ")
+   loop people
+       if str.StringContains(@,term)
+           Print(@)
+           Print(mf.GetPosition(@))
+       end
+   end
+   Print("Done.")      
+end
+
+# Gatecrash - Unlocks all doors in the game
+void gatecrash()
+    var allDoors = mf.GetThingsOfType("door")
+	Print("Unlocking " + Count(allDoors) + " doors...")
+    loop door in allDoors
+        gates.Unlock(door)
+    end
+    Print("All doors unlocked!")
+end
+
+# Balances - Returns all account names and balances from FinanceComputer
+void balances()
+	Print("Active account balances: " );
+	var keys = fin.GetMemories()
+	loop keys
+		Print(@ + " : " + fin.LoadMemory(@));
+	end
+end
+
+# Credit - Sets the balance of a given account name in FinanceComputer
+void credit(args)
+	var key = Input("Change whose balance?: ");
+	if !fin.HasMemory(key)
+		Print("Account [" + key + "] does not exist.")
+	else
+		Print(key + " : $" + fin.LoadMemory(key))
+		var cred = Input("Input amount to credit(+) or charge(-) " + key + ": ")
+		fin.ChangeBalance(key,cred);
+		Print(key + " : $" + fin.LoadMemory(key))
+	end
+end
+
+# DisplayTest - Estimates the number of rows available on screen
+void displayTest()
+	var HGT = Height()
+	var WID = Width()
+	Print("Screen is " + WID + " wide by " + HGT + " high.")
+	Print("Estimated rows: " + (HGT/9) - 2)
+	Input("Press enter to test...")
+
+	ClearText()
+	loop x from 1 to (HGT/9) - 2
+		Print(x)
+	end
+end
