@@ -31,28 +31,31 @@ SaveMemory(gates, "Hotel_Lobby_ComputerCashier")
 ### BIOS MEMORY ###
 var cons = [str,heart,mf,hug,trap,fin,gates]
 var types = ["bed","creditcard","door","drink","extractor","fence","floppy","fountain","fryingpan","fusebox","goods","modifier","hackdev","key","lamp","locker","machine","map","memory","musicbox","mysticalcube","pawn","point","portal","radio","screwdriver","seat","sendpipe","sink","snus","suitcase","taser","teleporter","tram","trashcan","tv","vendingmachine"]
-var lib = ["help","ports","connect","browse","store","restore","delete","remoteCall","decorrupt","balances","credit","roomSearch","typeSearch","peopleFind","gatecrash","slurp","info","displayTest"]
+var lib = ["help","boot","disk","ports","connect","browse","store","restore","delete","remoteCall","decorrupt","balances","credit","bringMe","roomSearch","typeSearch","peopleFind","gatecrash","slurp","info","displayTest"]
 
 var Qhelp = "Displays list of available commands or describes a command's function. Usage: <help> [commandName]"
+var Qboot = "Attempts to boot from floppy. Usage: <boot>"
+var Qdisk = "Displays the contents of a floppy. Usage: <disk>"
 var Qports = "Displays a list of open internet connections. Usage: <ports>"
 var Qconnect = "Open a new internet connection. Usage: <connect> [targetName]"
 var Qbrowse = "Display all key/value pairs in memory. Usage: <browse>"
 var Qstore = "Save a key/value pair to memory, prompts when overwriting existing key. Usage: <store> [key] [value]"
-var Qrestore = "Usage: <>"
+var Qrestore = "Display a specified key and its value from memory Usage: <restore> [key]"
 var Qdelete = "Usage: <>"
 var QremoteCall = "Usage: <>"
 var Qdecorrupt = "Usage: <>"
 var Qbalances = "Usage: <>"
 var Qcredit = "Usage: <>"
-var QroomSearch = "Usage: <>"
-var QtypeSearch = "Usage: <>"
-var QpeopleFind = "Usage: <>"
-var Qgatecrash = "Usage: <>"
-var Qslurp = "Usage: <>"
-var Qinfo = "Usage: <>"
-var QdisplayTest = "Usage: <>"
+var QroomSearch = "Displays all objects in a room matching a search therm. Usage: <roomSearch> [term]"
+var QtypeSearch = "Displays a list of objects given a type and search term. Usage: <typeSearch> [type] [term]"
+var QpeopleFind = "Displays the locations of people matching a search term. Usage: <peopleFind> [term]"
+var Qgatecrash = "Unlocks all doors. All of them. Usage: <gatecrash>"
+var QbringMe = "Brings a named object to Sebastian's location. Usage: <bringMe> [object]"
+var Qslurp = "Use with caution. Usage: <slurp>"
+var Qinfo = "Display computer specs. Usage: <info>"
+var QdisplayTest = "Estimates the number of rows available on screen. Usage: <displayTest>"
 
-var descs = [Qhelp,Qports,Qconnect,Qbrowse,Qstore,Qrestore,Qdelete,QremoteCall,Qdecorrupt,Qbalances,Qcredit,QroomSearch,QtypeSearch,QpeopleFind,Qgatecrash,Qslurp,Qinfo,QdisplayTest]
+var descs = [Qhelp,Qboot,Qdisk,Qports,Qconnect,Qbrowse,Qstore,Qrestore,Qdelete,QremoteCall,Qdecorrupt,Qbalances,Qcredit,QbringMe,QroomSearch,QtypeSearch,QpeopleFind,Qgatecrash,Qslurp,Qinfo,QdisplayTest]
 
 loop x from 0 to (Count(lib) - 1)
 	SaveMemory(lib[x], descs[x])
@@ -115,6 +118,8 @@ loop
         help(args)
     else if cmd == "boot"
         boot()
+    else if cmd == "disk"
+    	disk()
 	else if cmd == "ports"
 		ports()
     else if cmd == "connect"
@@ -143,6 +148,8 @@ loop
 		balances()
 	else if cmd == "credit"
 		credit(args)
+	else if cmd == "bringMe"
+		bringMe(args)
     else if cmd == "slurp"
         Slurp()
     else if cmd == "info"
@@ -235,13 +242,23 @@ void help(array args)
 	end
 end
 
-# Boot - Check for floppy, boot if found
+# Boot - Attempts to boot from floppy
 void boot()
    if HasFloppy()
        BootFromFloppy()
    else
        Print("Floppy not found.")    
    end 
+end
+
+# Disk - Displays contents of a floppy
+void disk()
+	if HasFloppy()
+		var allData = LoadData();
+		List(allData);
+	else
+		Print("Floppy not found.")
+	end
 end
 
 # Ports - Display a list of open internet connections
@@ -478,12 +495,11 @@ void decorrupt()
     loop name in people
         var cor = heart.GetNumericData(name, "corruption")
         if cor > 0
-            Print(name + " at " + cor + " corruption.")
-            Print("Curing " + name)
+            Print(name + " was at " + cor + " corruption. Curing...")
             heart.SetNumericData(name, "corruption", 0)
         end
     end
-    Print("Done.")
+    Print("Corruption cured in " + people.length + " targets.")
 end
 
 # RoomSearch - Returns all items in a room matching a search term (blank returns all rooms)
@@ -534,12 +550,14 @@ end
 void peopleFind(array args)
    var people = mf.GetPeople()
    var term = Input("Enter person search term: ")
+   var outputLines = []
    loop people
        if str.StringContains(@,term)
-           Print(@)
-           Print(mf.GetPosition(@))
+           var line = @ + " : " + mf.GetPosition(@)
+           Append(outputLines, line)
        end
    end
+   List(outputLines)
    Print("Done.")      
 end
 
@@ -575,6 +593,14 @@ void credit(args)
 	end
 end
 
+# BringMe - Brings a named object to Sebastian's locations
+void bringMe(args)
+
+	var item = Input("Enter item to bring here: ");
+	mf.SetPosition(item, "Sebastian");
+	Print("Brought " + item);
+end
+	
 # DisplayTest - Estimates the number of rows available on screen
 void displayTest()
 	var HGT = Height()
