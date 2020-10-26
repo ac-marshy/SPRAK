@@ -498,7 +498,7 @@ void decorrupt()
             heart.SetNumericData(name, "corruption", 0)
         end
     end
-    Print("Corruption cured in " + people.length + " targets.")
+    Print("Corruption cured in " + Count(people) + " targets.")
 end
 
 # Balances - Returns all account names and balances from FinanceComputer
