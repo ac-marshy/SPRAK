@@ -41,16 +41,16 @@ var Qconnect = "Open a new internet connection. Usage: <connect> [targetName]"
 var Qbrowse = "Display all key/value pairs in memory. Usage: <browse>"
 var Qstore = "Save a key/value pair to memory, prompts when overwriting existing key. Usage: <store> [key] [value]"
 var Qrestore = "Display a specified key and its value from memory Usage: <restore> [key]"
-var Qdelete = "Usage: <>"
-var QremoteCall = "Usage: <>"
-var Qdecorrupt = "Usage: <>"
-var Qbalances = "Usage: <>"
-var Qcredit = "Usage: <>"
+var Qdelete = "Delete a specified key/value pair from memory. Usage: <delete> [key]"
+var QremoteCall = "Calls a remote function from an open connection. Usage: <remoteCall> [port] [fnName] [args...]"
+var Qdecorrupt = "Cures corruption in all characters. Usage: <decorrupt>"
+var Qbalances = "Returns all account names and balances from FinanceComputer. Usage: <balances>"
+var Qcredit = "Sets the balance of a given account name in FinanceComputer. Usage: <credit> [key] [+/- amount]"
+var QbringMe = "Brings a named object to Sebastian's location. Usage: <bringMe> [object]"
 var QroomSearch = "Displays all objects in a room matching a search therm. Usage: <roomSearch> [term]"
 var QtypeSearch = "Displays a list of objects given a type and search term. Usage: <typeSearch> [type] [term]"
 var QpeopleFind = "Displays the locations of people matching a search term. Usage: <peopleFind> [term]"
 var Qgatecrash = "Unlocks all doors. All of them. Usage: <gatecrash>"
-var QbringMe = "Brings a named object to Sebastian's location. Usage: <bringMe> [object]"
 var Qslurp = "Use with caution. Usage: <slurp>"
 var Qinfo = "Display computer specs. Usage: <info>"
 var QdisplayTest = "Estimates the number of rows available on screen. Usage: <displayTest>"
@@ -136,6 +136,12 @@ loop
         remoteCall(args)
     else if cmd == "decorrupt"
         decorrupt()
+    else if cmd == "balances"
+		balances()
+	else if cmd == "credit"
+		credit(args)
+	else if cmd == "bringMe"
+		bringMe(args)
     else if cmd == "roomSearch"
         roomSearch(args)
     else if cmd == "typeSearch"
@@ -144,12 +150,7 @@ loop
         peopleFind(args)
     else if cmd == "gatecrash"
         gatecrash()
-	else if cmd == "balances"
-		balances()
-	else if cmd == "credit"
-		credit(args)
-	else if cmd == "bringMe"
-		bringMe(args)
+	
     else if cmd == "slurp"
         Slurp()
     else if cmd == "info"
@@ -439,9 +440,7 @@ void remoteCall(array args)
     string fnName
 	var id
 	array fnArgs
-	
-	
-	
+		
 	# Prompt for any missing paramters
 	if Count(args) >= 1
 		id = args[0]
@@ -489,7 +488,7 @@ void remoteCall(array args)
 	end
 end
 
-# Decorrupt - Sets corruption to zero in any people with positive corruption value
+# Decorrupt - Cures corruption in all characters
 void decorrupt()
     var people = mf.GetPeople()
     loop name in people
@@ -500,6 +499,36 @@ void decorrupt()
         end
     end
     Print("Corruption cured in " + people.length + " targets.")
+end
+
+# Balances - Returns all account names and balances from FinanceComputer
+void balances()
+	Print("Active account balances: " );
+	var keys = fin.GetMemories()
+	loop keys
+		Print(@ + " : " + fin.LoadMemory(@));
+	end
+end
+
+# Credit - Sets the balance of a given account name in FinanceComputer
+void credit(args)
+	var key = Input("Change whose balance?: ");
+	if !fin.HasMemory(key)
+		Print("Account [" + key + "] does not exist.")
+	else
+		Print(key + " : $" + fin.LoadMemory(key))
+		var cred = Input("Input amount to credit(+) or charge(-) " + key + ": ")
+		fin.ChangeBalance(key,cred);
+		Print(key + " : $" + fin.LoadMemory(key))
+	end
+end
+
+# BringMe - Brings a named object to Sebastian's locations
+void bringMe(args)
+
+	var item = Input("Enter item to bring here: ");
+	mf.SetPosition(item, "Sebastian");
+	Print("Brought " + item);
 end
 
 # RoomSearch - Returns all items in a room matching a search term (blank returns all rooms)
@@ -569,36 +598,6 @@ void gatecrash()
         gates.Unlock(door)
     end
     Print("All doors unlocked!")
-end
-
-# Balances - Returns all account names and balances from FinanceComputer
-void balances()
-	Print("Active account balances: " );
-	var keys = fin.GetMemories()
-	loop keys
-		Print(@ + " : " + fin.LoadMemory(@));
-	end
-end
-
-# Credit - Sets the balance of a given account name in FinanceComputer
-void credit(args)
-	var key = Input("Change whose balance?: ");
-	if !fin.HasMemory(key)
-		Print("Account [" + key + "] does not exist.")
-	else
-		Print(key + " : $" + fin.LoadMemory(key))
-		var cred = Input("Input amount to credit(+) or charge(-) " + key + ": ")
-		fin.ChangeBalance(key,cred);
-		Print(key + " : $" + fin.LoadMemory(key))
-	end
-end
-
-# BringMe - Brings a named object to Sebastian's locations
-void bringMe(args)
-
-	var item = Input("Enter item to bring here: ");
-	mf.SetPosition(item, "Sebastian");
-	Print("Brought " + item);
 end
 	
 # DisplayTest - Estimates the number of rows available on screen
